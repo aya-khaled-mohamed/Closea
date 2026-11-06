@@ -1,0 +1,328 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  avatarUrl     String?
+  role          String        @default("CUSTOMER") // "CUSTOMER" | "OWNER" | "ATELIER" | "ADMIN"
+  status        String        @default("ACTIVE")   // "ACTIVE" | "SUSPENDED"
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  profile       UserProfile?
+  dresses       Dress[]       @relation("OwnerDresses")
+  bookings      Booking[]     @relation("CustomerBookings")
+  wishlists     Wishlist[]
+  notifications Notification[]
+  activityLogs  AdminActivityLog[]
+  reviewsAuthored Review[]    @relation("ReviewsAuthored")
+  atelier       Atelier?      @relation("AtelierUser")
+
+  @@index([email])
+  @@index([role])
+}
+
+model UserProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                 String?
+  location            String?
+  preferredSize       String?
+  idVerified          Boolean  @default(false)
+  payoutAccountNumber String?
+  payoutBankName      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Category {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  imageUrl     String?
+  displayOrder Int      @default(0)
+  isFeatured   Boolean  @default(false)
+  dresses      Dress[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Size {
+  id           String   @id @default(cuid())
+  label        String   @unique
+  description  String?
+  sortOrder    Int      @default(0)
+  dresses      Dress[]
+  createdAt    DateTime @default(now())
+}
+
+model Dress {
+  id                 String          @id @default(cuid())
+  title              String
+  slug               String          @unique
+  description        String
+  ownerId            String
+  owner              User            @relation("OwnerDresses", fields: [ownerId], references: [id], onDelete: Cascade)
+  categoryId         String
+  category           Category        @relation(fields: [categoryId], references: [id])
+  sizeId             String
+  size               Size            @relation(fields: [sizeId], references: [id])
+  color              String
+  brand              String
+  condition          String          @default("Excellent")
+  originalPrice      Float?
+  rentalPricePerDay  Float
+  cleaningFee        Float           @default(25.0)
+  securityDeposit    Float           @default(100.0)
+  location           String
+  rentalTerms        String?
+  status             String          @default("PENDING_APPROVAL") // "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "DEACTIVATED"
+  rejectionReason    String?
+  isFeatured         Boolean         @default(false)
+  viewsCount         Int             @default(0)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  images             DressImage[]
+  bookings           Booking[]
+  wishlists          Wishlist[]
+  availabilities     DressAvailability[]
+  atelierAssignments AtelierAssignment[]
+  reviews            Review[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([sizeId])
+  @@index([ownerId])
+  @@index([isFeatured])
+}
+
+model DressImage {
+  id           String   @id @default(cuid())
+  dressId      String
+  dress        Dress    @relation(fields: [dressId], references: [id], onDelete: Cascade)
+  url          String
+  isPrimary    Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([dressId])
+}
+
+model DressAvailability {
+  id          String   @id @default(cuid())
+  dressId     String
+  dress       Dress    @relation(fields: [dressId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime
+  isBlocked   Boolean  @default(true)
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@index([dressId, startDate, endDate])
+}
+
+model Booking {
+  id                  String             @id @default(cuid())
+  bookingReference    String             @unique
+  dressId             String
+  dress               Dress              @relation(fields: [dressId], references: [id], onDelete: Restrict)
+  customerId          String
+  customer            User               @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Restrict)
+  startDate           DateTime
+  endDate             DateTime
+  totalDays           Int
+  dailyRate           Float
+  rentalSubtotal      Float
+  cleaningFee         Float              @default(25.0)
+  securityDeposit     Float              @default(100.0)
+  platformFee         Float
+  totalAmount         Float
+  ownerPayout         Float
+  atelierFee          Float              @default(0.0)
+  status              String             @default("PENDING") // PENDING | ACCEPTED | REJECTED | CONFIRMED | READY_FOR_COLLECTION | ACTIVE_RENTAL | RETURNED | COMPLETED | CANCELLED
+  cancellationReason  String?
+  specialRequests     String?
+  deliveryAddress     String?
+  selectedAtelierId   String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  statusHistory       BookingStatusHistory[]
+  atelierAssignment   AtelierAssignment?
+  transactions        Transaction[]
+  reviews             Review[]
+
+  @@index([dressId])
+  @@index([customerId])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model BookingStatusHistory {
+  id              String        @id @default(cuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status          String
+  changedByUserId String?
+  note            String?
+  createdAt       DateTime      @default(now())
+
+  @@index([bookingId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dressId   String
+  dress     Dress    @relation(fields: [dressId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dressId])
+  @@index([userId])
+}
+
+model Atelier {
+  id             String              @id @default(cuid())
+  userId         String?             @unique
+  user           User?               @relation("AtelierUser", fields: [userId], references: [id], onDelete: SetNull)
+  name           String
+  slug           String              @unique
+  contactPerson  String
+  email          String              @unique
+  phone          String
+  address        String
+  city           String
+  postalCode     String
+  isActive       Boolean             @default(true)
+  assignments    AtelierAssignment[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model AtelierAssignment {
+  id                String             @id @default(cuid())
+  atelierId         String
+  atelier           Atelier            @relation(fields: [atelierId], references: [id], onDelete: Restrict)
+  bookingId         String             @unique
+  booking           Booking            @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  dressId           String
+  dress             Dress              @relation(fields: [dressId], references: [id], onDelete: Restrict)
+  operationalStatus String             @default("AWAITING_DELIVERY") // AWAITING_DELIVERY | RECEIVED | CLEANING | ALTERATION | READY | COLLECTED | RETURNED
+  notes             String?
+  receivedAt        DateTime?
+  readyAt           DateTime?
+  collectedAt       DateTime?
+  returnedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  processingRecords DressProcessingRecord[]
+
+  @@index([atelierId])
+  @@index([operationalStatus])
+}
+
+model DressProcessingRecord {
+  id           String            @id @default(cuid())
+  assignmentId String
+  assignment   AtelierAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  stage        String
+  description  String
+  performedBy  String?
+  createdAt    DateTime          @default(now())
+
+  @@index([assignmentId])
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  bookingId     String
+  booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type          String            // BOOKING_PAYMENT | OWNER_PAYOUT | ATELIER_PAYOUT | PLATFORM_FEE | REFUND
+  amount        Float
+  status        String            @default("PENDING") // PENDING | SUCCESS | FAILED | REFUNDED
+  paymentMethod String            @default("STRIPE_CARD_EMULATED")
+  reference     String            @unique
+  gatewayNote   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([bookingId])
+  @@index([type])
+}
+
+model CommissionSetting {
+  id                 String   @id @default(cuid())
+  key                String   @unique @default("DEFAULT")
+  platformFeePercent Float    @default(15.0)  // Configurable in admin
+  atelierFeePercent  Float    @default(10.0)  // Configurable in admin
+  ownerSharePercent  Float    @default(75.0)  // Configurable in admin
+  isActive           Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  link      String?
+  type      String   @default("INFO")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  dressId   String
+  dress     Dress    @relation(fields: [dressId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("ReviewsAuthored", fields: [authorId], references: [id], onDelete: Cascade)
+  rating    Int      @default(5)
+  comment   String
+  createdAt DateTime @default(now())
+
+  @@index([dressId])
+}
+
+model AdminActivityLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action     String   // e.g. "APPROVE_LISTING", "REJECT_LISTING", "SUSPEND_USER"
+  targetType String   // "DRESS", "USER", "BOOKING", "SETTING"
+  targetId   String?
+  details    String?  // JSON string or summary
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+}
+
+model PlatformSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}

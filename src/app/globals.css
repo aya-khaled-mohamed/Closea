@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-nude: #D9B8B4;
+  --color-rose: #C99F9D;
+  --color-blush: #F2E4E1;
+  --color-white: #FFFFFF;
+  --color-sage: #A8B5A0;
+  --color-olive: #66745D;
+  --color-grey: #514B49;
+}
+
+@layer base {
+  body {
+    @apply bg-[#FFFFFF] text-closea-grey antialiased selection:bg-closea-blush selection:text-closea-grey;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, .font-editorial {
+    font-family: var(--font-cormorant), 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Subtle scrollbars for editorial cleanliness */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FAF7F6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D9B8B4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C99F9D;
+}
