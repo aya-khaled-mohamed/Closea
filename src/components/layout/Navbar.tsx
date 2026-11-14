@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Heart,
-  User as UserIcon,
   Menu,
   X,
   LogOut,
@@ -13,6 +12,7 @@ import {
   ShoppingBag,
   Scissors,
   PlusCircle,
+  ArrowRightLeft,
 } from 'lucide-react';
 import Logo from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
@@ -33,7 +33,6 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Fetch session & wishlist
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -66,28 +65,18 @@ export function Navbar() {
 
   const navLinks = [
     { label: 'Marketplace', href: '/marketplace' },
-    { label: 'Collections', href: '/marketplace?featured=true' },
+    { label: 'Trending Now', href: '/marketplace?trending=true' },
     { label: 'How Closéa Works', href: '/#how-it-works' },
-    { label: 'Partner Ateliers', href: '/#ateliers' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#F2E4E1] transition-all">
-      {/* Top editorial announcement bar */}
-      <div className="bg-[#FAF4F3] border-b border-[#F2E4E1]/80 py-1.5 px-4 text-center text-xs tracking-wider text-closea-grey">
-        <span>Complimentary Atelier fitting and eco-cleaning included on every booking</span>
-        <span className="mx-2 text-[#8B5E56]">•</span>
-        <span className="font-medium text-[#8B5E56]">Circular Luxury in Qena</span>
-      </div>
-
+    <header className="sticky top-0 z-40 bg-white border-b border-gray-100 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Brand Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Logo size="md" />
           </div>
 
-          {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
@@ -95,10 +84,10 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={`text-sm tracking-wide transition-colors duration-200 py-1 border-b-2 ${
+                  className={`text-sm font-bold tracking-wide transition-colors duration-200 ${
                     isActive
-                      ? 'border-closea-rose text-closea-grey font-medium'
-                      : 'border-transparent text-[#3D322E] hover:text-closea-grey hover:border-closea-nude'
+                      ? 'text-closea-ink'
+                      : 'text-closea-inkSoft hover:text-closea-ink'
                   }`}
                 >
                   {link.label}
@@ -107,218 +96,177 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Right Actions */}
           <div className="hidden md:flex items-center space-x-5">
-            {/* List Your Dress CTA */}
-            <Link href="/dashboard/owner?action=new-listing">
-              <Button variant="outline" size="sm" className="font-medium border-closea-rose text-closea-grey hover:bg-closea-blush/40">
-                <PlusCircle className="w-3.5 h-3.5 text-[#8B5E56]" />
-                List Your Dress
-              </Button>
-            </Link>
+            {/* List Your Dress CTA - Updated to use router.push */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/dashboard/owner?action=new-listing')}
+              className="font-bold border-closea-rosewood text-closea-rosewood hover:bg-closea-blush/40"
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              List Your Dress
+            </Button>
 
-            {/* Wishlist Icon */}
             <Link
               href="/dashboard/customer?tab=wishlist"
-              className="relative p-2 text-closea-grey hover:text-[#8B5E56] transition-colors"
+              className="relative p-2 text-closea-inkSoft hover:text-closea-rosewood transition-colors"
               aria-label="Wishlist"
             >
-              <Heart className="w-5 h-5 stroke-[1.6]" />
+              <Heart className="w-5 h-5 stroke-[2]" />
               {wishlistCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-closea-rose text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-0 right-0 w-4 h-4 bg-closea-rosewood text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* User Account / Auth */}
             {currentUser ? (
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2.5 p-1.5 rounded-full hover:bg-closea-blush/50 transition-colors focus:outline-none"
+                  className="flex items-center space-x-2.5 p-1.5 rounded-full hover:bg-gray-50 transition-colors focus:outline-none"
                 >
                   {currentUser.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={currentUser.avatarUrl}
                       alt={currentUser.name}
-                      className="w-8 h-8 rounded-full object-cover border border-closea-nude"
+                      className="w-9 h-9 rounded-full object-cover border border-gray-200"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-closea-blush text-closea-grey flex items-center justify-center font-medium text-xs">
+                    <div className="w-9 h-9 rounded-full bg-closea-blush text-closea-ink flex items-center justify-center font-bold text-xs">
                       {currentUser.name.charAt(0)}
                     </div>
                   )}
-                  <span className="text-xs font-semibold text-[#2D2522] hidden lg:inline-block max-w-[100px] truncate">
+                  <span className="text-sm font-bold text-closea-ink hidden lg:inline-block max-w-[100px] truncate">
                     {currentUser.name.split(' ')[0]}
                   </span>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-modal border border-closea-blush py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-2 border-b border-closea-blush">
-                      <p className="text-xs font-semibold text-closea-grey truncate">{currentUser.name}</p>
-                      <p className="text-[11px] text-[#3D322E] truncate">{currentUser.email}</p>
-                      <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-closea-blush text-closea-grey">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-5 py-3 border-b border-gray-100">
+                      <p className="text-sm font-bold text-closea-ink truncate">{currentUser.name}</p>
+                      <p className="text-xs font-medium text-closea-inkSoft truncate mb-2">{currentUser.email}</p>
+                      <span className="inline-block px-2.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-gray-100 text-closea-inkSoft">
                         Role: {currentUser.role}
                       </span>
                     </div>
 
-                    <Link
-                      href="/dashboard/customer"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-closea-grey hover:bg-closea-blush/40 transition-colors"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5 text-[#8B5E56]" />
-                      Customer Dashboard & Bookings
-                    </Link>
+                    <div className="py-1">
+                      {currentUser.role === 'OWNER' ? (
+                        <>
+                          <Link href="/dashboard/owner" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-closea-ink hover:bg-gray-50 transition-colors">
+                            <Sparkles className="w-4 h-4 text-closea-rosewood" /> Dress Owner Studio
+                          </Link>
+                          <Link href="/dashboard/customer" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-closea-inkSoft hover:bg-gray-50 transition-colors">
+                            <ArrowRightLeft className="w-4 h-4" /> Switch to Renting
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <Link href="/dashboard/customer" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-closea-ink hover:bg-gray-50 transition-colors">
+                            <ShoppingBag className="w-4 h-4 text-closea-rosewood" /> My Bookings & Wishlist
+                          </Link>
+                          <Link href="/dashboard/owner" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-closea-inkSoft hover:bg-gray-50 transition-colors">
+                            <ArrowRightLeft className="w-4 h-4" /> Switch to Lending
+                          </Link>
+                        </>
+                      )}
 
-                    <Link
-                      href="/dashboard/owner"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-closea-grey hover:bg-closea-blush/40 transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#8B5E56]" />
-                      Dress Owner Studio & Earnings
-                    </Link>
+                      {currentUser.role === 'ATELIER' && (
+                        <Link href="/atelier" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-closea-olive hover:bg-closea-sage/20 transition-colors">
+                          <Scissors className="w-4 h-4" /> Partner Atelier Portal
+                        </Link>
+                      )}
+                    </div>
 
-                    {currentUser.role === 'ATELIER' && (
-                      <Link
-                        href="/atelier"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-closea-olive font-medium hover:bg-closea-sage/10 transition-colors"
-                      >
-                        <Scissors className="w-3.5 h-3.5" />
-                        Partner Atelier Portal
-                      </Link>
-                    )}
-
-                    <div className="border-t border-closea-blush my-1" />
-
-                    <button
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors text-left"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      Sign Out
-                    </button>
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button onClick={() => { setIsUserMenuOpen(false); handleLogout(); }} className="w-full flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors text-left">
+                        <LogOut className="w-4 h-4" /> Sign Out
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
+                  <Button variant="ghost" size="sm" className="font-bold">Sign In</Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="primary" size="sm">
-                    Join Closéa
-                  </Button>
+                  <Button variant="primary" size="sm">Join Closéa</Button>
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile menu trigger */}
           <div className="flex md:hidden items-center space-x-2">
-            <Link href="/dashboard/customer?tab=wishlist" className="p-2 text-closea-grey">
+            <Link href="/dashboard/customer?tab=wishlist" className="p-2 text-closea-inkSoft">
               <Heart className="w-5 h-5" />
             </Link>
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-closea-grey hover:bg-closea-blush/50 rounded-lg"
-              aria-label="Toggle navigation menu"
-            >
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-closea-ink hover:bg-gray-50 rounded-lg">
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-closea-blush bg-white px-4 pt-3 pb-6 space-y-4">
-          <nav className="flex flex-col space-y-2">
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-4 pb-6 space-y-4 shadow-xl absolute w-full">
+          <nav className="flex flex-col space-y-1">
             {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-[#2D2522] hover:bg-closea-blush/40"
-              >
+              <Link key={link.label} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2.5 rounded-lg text-sm font-bold text-closea-ink hover:bg-gray-50">
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <div className="pt-3 border-t border-closea-blush flex flex-col space-y-2">
-            <Link
-              href="/dashboard/owner?action=new-listing"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Button variant="outline" size="sm" className="w-full justify-center">
-                <PlusCircle className="w-4 h-4 mr-2 text-[#8B5E56]" />
-                List Your Dress
-              </Button>
-            </Link>
+          <div className="pt-4 border-t border-gray-100 flex flex-col space-y-3">
+            <Button variant="outline" size="md" className="w-full justify-center" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard/owner?action=new-listing'); }}>
+              <PlusCircle className="w-4 h-4 mr-2" /> List Your Dress
+            </Button>
 
             {currentUser ? (
               <>
-                <Link
-                  href="/dashboard/customer"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3 py-2 text-sm text-closea-grey font-medium hover:bg-closea-blush/40 rounded-lg flex items-center justify-between"
-                >
-                  <span>Customer Dashboard</span>
-                  <ShoppingBag className="w-4 h-4 text-[#8B5E56]" />
-                </Link>
-                <Link
-                  href="/dashboard/owner"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3 py-2 text-sm text-closea-grey font-medium hover:bg-closea-blush/40 rounded-lg flex items-center justify-between"
-                >
-                  <span>Dress Owner Studio</span>
-                  <Sparkles className="w-4 h-4 text-[#8B5E56]" />
-                </Link>
+                 {currentUser.role === 'OWNER' ? (
+                    <>
+                      <Link href="/dashboard/owner" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 text-sm text-closea-ink font-bold hover:bg-gray-50 rounded-lg flex items-center justify-between">
+                        <span>Owner Studio</span><Sparkles className="w-4 h-4 text-closea-rosewood" />
+                      </Link>
+                      <Link href="/dashboard/customer" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 text-sm text-closea-inkSoft font-medium hover:bg-gray-50 rounded-lg flex items-center justify-between">
+                        <span>Switch to Renting</span><ArrowRightLeft className="w-4 h-4" />
+                      </Link>
+                    </>
+                 ) : (
+                    <>
+                      <Link href="/dashboard/customer" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 text-sm text-closea-ink font-bold hover:bg-gray-50 rounded-lg flex items-center justify-between">
+                        <span>Customer Dashboard</span><ShoppingBag className="w-4 h-4 text-closea-rosewood" />
+                      </Link>
+                      <Link href="/dashboard/owner" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 text-sm text-closea-inkSoft font-medium hover:bg-gray-50 rounded-lg flex items-center justify-between">
+                        <span>Switch to Lending</span><ArrowRightLeft className="w-4 h-4" />
+                      </Link>
+                    </>
+                 )}
+                
                 {currentUser.role === 'ATELIER' && (
-                  <Link
-                    href="/atelier"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-3 py-2 text-sm text-closea-olive font-medium bg-closea-sage/10 rounded-lg flex items-center justify-between"
-                  >
-                    <span>Partner Atelier Portal</span>
-                    <Scissors className="w-4 h-4" />
+                  <Link href="/atelier" onClick={() => setIsMobileMenuOpen(false)} className="px-3 py-2 text-sm text-closea-olive font-bold bg-closea-sage/10 rounded-lg flex items-center justify-between mt-2">
+                    <span>Partner Atelier Portal</span><Scissors className="w-4 h-4" />
                   </Link>
                 )}
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 font-medium hover:bg-red-50 rounded-lg flex items-center justify-between"
-                >
-                  <span>Sign Out</span>
-                  <LogOut className="w-4 h-4" />
+
+                <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="w-full text-left px-3 py-2 text-sm text-red-600 font-bold hover:bg-red-50 rounded-lg flex items-center justify-between">
+                  <span>Sign Out</span><LogOut className="w-4 h-4" />
                 </button>
               </>
             ) : (
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full">
-                    Sign In
-                  </Button>
+                  <Button variant="outline" size="md" className="w-full">Sign In</Button>
                 </Link>
                 <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="primary" size="sm" className="w-full">
-                    Join Closéa
-                  </Button>
+                  <Button variant="primary" size="md" className="w-full">Join Closéa</Button>
                 </Link>
               </div>
             )}

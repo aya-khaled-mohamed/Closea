@@ -1,62 +1,67 @@
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return 'EGP0';
-  return new Intl.NumberFormat('fr-FR', {
+export function formatCurrency(amount: number | string | undefined | null): string {
+  if (amount === undefined || amount === null || amount === '') return 'EGP 0';
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(numericAmount)) return 'EGP 0';
+  
+  return new Intl.NumberFormat('en-EG', {
     style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 2,
-    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
-  }).format(amount);
+    currency: 'EGP',
+    maximumFractionDigits: 0,
+  }).format(numericAmount).replace('EGP', 'EGP ');
 }
 
-export function formatDate(date: string | Date | null | undefined): string {
-  if (!date) return '—';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
+export function formatDate(dateString: string | Date): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
-  }).format(d);
+  }).format(date);
 }
 
-export function formatDateRange(start: string | Date, end: string | Date): string {
-  return `${formatDate(start)} – ${formatDate(end)}`;
+export function formatDateRange(startDate: string | Date, endDate: string | Date): string {
+  if (!startDate || !endDate) return '';
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return '';
+  
+  const startStr = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(start);
+  const endStr = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(end);
+  
+  return `${startStr} - ${endStr}`;
 }
 
-export interface PriceBreakdown {
-  days: number;
-  dailyRate: number;
-  rentalSubtotal: number;
-  cleaningFee: number;
-  securityDeposit: number;
-  platformFee: number;
-  atelierFee: number;
-  ownerPayout: number;
-  totalAmount: number;
-}
-
+// الحسابات: التأمين بيتحجز وقت الاستلام، والمستخدم بيدفع الإيجار بس دلوقتي
 export function calculateBookingFinancials(
-  dailyRate: number,
+  rentalPricePerDay: number,
   days: number,
-  cleaningFee = 25,
-  securityDeposit = 100,
-  commissionSetting = { platformFeePercent: 15, atelierFeePercent: 10, ownerSharePercent: 75 }
-): PriceBreakdown {
-  const rentalSubtotal = dailyRate * Math.max(1, days);
-  const platformFee = Math.round((rentalSubtotal * (commissionSetting.platformFeePercent / 100)) * 100) / 100;
-  const atelierFee = Math.round((rentalSubtotal * (commissionSetting.atelierFeePercent / 100)) * 100) / 100;
-  const ownerPayout = Math.round((rentalSubtotal - platformFee - atelierFee) * 100) / 100;
-  const totalAmount = rentalSubtotal + cleaningFee + securityDeposit;
+  securityDeposit: number,
+  commission?: { platformFeePercent: number; atelierFeePercent: number; ownerSharePercent: number }
+) {
+  const rentalSubtotal = rentalPricePerDay * days;
+  const cleaningFee = 0; 
+  
+  const platformPct = commission?.platformFeePercent ?? 15;
+  const atelierPct = commission?.atelierFeePercent ?? 10;
+  const ownerPct = commission?.ownerSharePercent ?? 75;
+
+  const platformFee = (rentalSubtotal * platformPct) / 100;
+  const atelierFee = (rentalSubtotal * atelierPct) / 100;
+  const ownerPayout = (rentalSubtotal * ownerPct) / 100;
+  
+  // المبلغ المدفوع الآن = الإيجار فقط
+  const totalAmount = rentalSubtotal; 
 
   return {
-    days,
-    dailyRate,
     rentalSubtotal,
     cleaningFee,
     securityDeposit,

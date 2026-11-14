@@ -8,40 +8,23 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant = 'primary',
-      size = 'md',
-      isLoading = false,
-      disabled,
-      children,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant = 'primary', size = 'md', isLoading = false, disabled, children, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-200 tracking-wide rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]';
+      'inline-flex items-center justify-center font-bold transition-all duration-200 rounded-xl focus:outline-none disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]';
 
     const variants = {
-      primary:
-        'bg-closea-rose text-white hover:bg-[#bd9290] focus:ring-closea-rose shadow-sm',
-      secondary:
-        'bg-closea-blush text-closea-grey hover:bg-[#ebd8d5] focus:ring-closea-nude',
-      outline:
-        'border border-closea-nude text-closea-grey hover:bg-closea-blush/50 focus:ring-closea-nude',
-      ghost:
-        'text-closea-grey hover:bg-closea-blush/40 focus:ring-closea-nude',
-      sage:
-        'bg-closea-sage text-white hover:bg-closea-olive focus:ring-closea-sage shadow-sm',
-      dark:
-        'bg-closea-grey text-white hover:bg-[#3f3a38] focus:ring-closea-grey shadow-sm',
+      primary: 'bg-closea-rosewood text-white hover:bg-[#853c4b] shadow-md hover:shadow-lg',
+      secondary: 'bg-closea-ink text-white hover:bg-black shadow-md',
+      outline: 'border-2 border-gray-200 text-closea-ink hover:border-gray-300 hover:bg-gray-50',
+      ghost: 'text-closea-inkSoft hover:bg-gray-100 hover:text-closea-ink',
+      sage: 'bg-closea-sage text-closea-olive hover:bg-[#dce6d8]',
+      dark: 'bg-gray-900 text-white hover:bg-black shadow-md',
     };
 
     const sizes = {
-      sm: 'text-xs px-4 py-2 gap-1.5',
-      md: 'text-sm px-6 py-2.5 gap-2',
-      lg: 'text-base px-8 py-3.5 gap-2.5',
+      sm: 'text-xs px-4 py-2',
+      md: 'text-sm px-6 py-3',
+      lg: 'text-base px-8 py-4',
     };
 
     return (
@@ -52,25 +35,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading && (
-          <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            />
-          </svg>
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
         )}
         {children}
       </button>

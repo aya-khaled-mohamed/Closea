@@ -1,280 +1,296 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { AdminSidebar } from '@/components/layout/AdminSidebar';
-import { AdminHeader } from '@/components/layout/AdminHeader';
-import { Badge } from '@/components/ui/Badge';
+import Image from 'next/image';
+import prisma from '@/lib/prisma';
 import { Button } from '@/components/ui/Button';
+import { DressCard } from '@/components/marketplace/DressCard';
 import {
-  Users,
-  Sparkles,
-  ShoppingBag,
-  Scissors,
-  DollarSign,
-  TrendingUp,
   ArrowRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
+  ShieldCheck,
+  Sparkles,
+  Scissors,
+  Star,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 
-export default function AdminOverviewPage() {
-  const router = useRouter();
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const revalidate = 0;
 
-  useEffect(() => {
-    async function loadStats() {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/admin/stats');
-        if (!res.ok) {
-          router.push('/admin/login');
-          return;
-        }
-        const json = await res.json();
-        setData(json.metrics);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadStats();
-  }, [router]);
+export default async function HomePage() {
+  // Fetch featured approved dresses
+  const featuredDresses = await prisma.dress.findMany({
+    where: { status: 'APPROVED', isFeatured: true },
+    take: 4,
+    include: {
+      images: { orderBy: { displayOrder: 'asc' } },
+      category: true,
+      size: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
-  if (isLoading || !data) {
-    return (
-      <div className="flex w-full min-h-screen">
-        <AdminSidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-closea-rose border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
-  }
-
-  const { users, dresses, bookings, finances, operations, commission, categoryBreakdown } = data;
+  // Fetch categories
+  const categories = await prisma.category.findMany({
+    orderBy: { displayOrder: 'asc' },
+    take: 4,
+    include: {
+      _count: { select: { dresses: { where: { status: 'APPROVED' } } } },
+    },
+  });
 
   return (
-    <div className="flex w-full min-h-screen">
-      <AdminSidebar />
+    <div className="flex flex-col bg-white">
+      
+      {/* 1. HERO SECTION */}
+      <section className="relative bg-white pt-16 pb-20 lg:pt-24 lg:pb-28 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            
+            {/* Left: Text Content */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100">
+                <span className="w-2 h-2 rounded-full bg-closea-rose animate-pulse" />
+                <span className="text-[11px] uppercase tracking-widest font-bold text-closea-ink">
+                  Circular Haute Couture
+                </span>
+              </div>
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <AdminHeader
-          title="Platform Overview & Governance"
-          subtitle="Real-time synchronized database telemetry and operational control"
-        />
+              <h1 className="text-4xl sm:text-5xl lg:text-[64px] font-extrabold text-closea-ink tracking-tight leading-[1.1]">
+                Wear the dress <br />
+                of your dreams.
+              </h1>
 
-        <main className="p-8 space-y-8">
-          {/* Action Alert for Pending Approvals */}
-          {dresses.pending > 0 && (
-            <div className="p-4 rounded-2xl bg-[#F7EFEF] border border-closea-rose/40 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Clock className="w-5 h-5 text-[#8B5E56] flex-shrink-0" />
+              <p className="text-base sm:text-lg text-closea-inkSoft max-w-lg font-medium leading-relaxed">
+                Cherish the memory, not the clutter. Closéa connects women who own exceptional designer dresses with women seeking unforgettable looks.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+                <Link href="/marketplace" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto shadow-md">
+                    Explore The Collection
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/dashboard/owner?action=new-listing" className="w-full sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto bg-white border-gray-200">
+                    Monetize Your Closet
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Trust Indicators - FIXED */}
+              <div className="pt-8 mt-2 border-t border-gray-100 flex items-start justify-between gap-4 max-w-md">
                 <div>
-                  <h4 className="text-xs font-semibold text-closea-grey">
-                    {dresses.pending} Dress Listing{dresses.pending > 1 ? 's' : ''} Awaiting Curator Approval
-                  </h4>
-                  <p className="text-[11px] text-[#3D322E]">
-                    Review garment provenance, retail value, and condition before making live.
+                  <p className="text-2xl sm:text-3xl font-extrabold text-closea-ink whitespace-nowrap">
+                    10k+
+                  </p>
+                  <p className="text-[10px] font-bold text-closea-inkSoft uppercase tracking-wider mt-1">
+                    Happy Renters
+                  </p>
+                </div>
+                
+                <div className="w-px h-10 bg-gray-200 flex-shrink-0 mt-1" />
+                
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-closea-ink whitespace-nowrap">
+                    500+
+                  </p>
+                  <p className="text-[10px] font-bold text-closea-inkSoft uppercase tracking-wider mt-1">
+                    Dresses
+                  </p>
+                </div>
+                
+                <div className="w-px h-10 bg-gray-200 flex-shrink-0 mt-1" />
+                
+                <div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-closea-ink whitespace-nowrap">
+                      4.9
+                    </span>
+                    <Star className="w-4 h-4 fill-closea-rosewood text-closea-rosewood mb-1" />
+                  </div>
+                  <p className="text-[10px] font-bold text-closea-inkSoft uppercase tracking-wider mt-1">
+                    Rating
                   </p>
                 </div>
               </div>
-              <Link href="/admin/dresses?status=PENDING_APPROVAL">
-                <Button variant="primary" size="sm">
-                  Review Listings
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </Link>
             </div>
-          )}
 
-          {/* Primary KPI Metrics Grid */}
+            {/* Right: Editorial Image */}
+            <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+              <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-xl">
+                <Image
+                  src="https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1000&q=80"
+                  alt="Elegant Designer Dress"
+                  fill
+                  priority
+                  className="object-cover object-center"
+                />
+              </div>
+              
+              {/* Floating Badge on Image */}
+              <div className="absolute -bottom-5 -left-5 bg-white p-4 rounded-2xl shadow-lg border border-gray-100 hidden sm:block">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-closea-blush/40 rounded-full">
+                    <Scissors className="w-4 h-4 text-closea-rosewood" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-closea-ink">Atelier Certified</p>
+                    <p className="text-[10px] font-medium text-closea-inkSoft">Cleaned & Fitted</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 2. "AS SEEN IN" / PARTNERS BAR */}
+      <section className="border-y border-gray-100 bg-gray-50/50 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-[10px] font-bold text-closea-inkSoft uppercase tracking-widest mb-4">
+            Trusted by fashion lovers featured in
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+            <span className="text-lg font-serif font-bold text-closea-ink">VOGUE</span>
+            <span className="text-lg font-sans font-black tracking-tighter text-closea-ink">ELLE</span>
+            <span className="text-lg font-serif italic text-closea-ink">Harper's BAZAAR</span>
+            <span className="text-lg font-sans font-bold uppercase tracking-widest text-closea-ink">BAZAAR</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. CURATED CATEGORIES */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-3xl font-extrabold text-closea-ink">
+                Shop by Occasion
+              </h2>
+              <p className="text-sm font-medium text-closea-inkSoft mt-1.5">
+                Find the perfect silhouette for your next milestone.
+              </p>
+            </div>
+            <Link href="/marketplace" className="hidden sm:flex text-sm font-bold text-closea-rosewood hover:underline items-center">
+              View All <ArrowRight className="w-4 h-4 ml-1" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/marketplace?category=${cat.slug}`}
+                className="group relative aspect-square rounded-2xl overflow-hidden bg-gray-100"
+              >
+                <Image
+                  src={cat.imageUrl || 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=800&q=80'}
+                  alt={cat.name}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+                <div className="absolute inset-0 flex flex-col justify-end p-5">
+                  <h3 className="text-lg font-bold text-white">{cat.name}</h3>
+                  <p className="text-xs font-medium text-white/90 mt-1">
+                    {cat._count.dresses} Designs
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. FEATURED DRESSES */}
+      <section className="py-20 bg-[#FAF7F6]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-3xl font-extrabold text-closea-ink">
+              Curated Wardrobe
+            </h2>
+            <p className="text-sm font-medium text-closea-inkSoft mt-1.5">
+              Handpicked iconic gowns available for reservation this season.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Financial Gross Volume */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-1">
-              <div className="flex items-center justify-between text-[#3D322E]">
-                <span className="text-[11px] uppercase tracking-wider font-semibold">
-                  Gross Booking Volume
-                </span>
-                <DollarSign className="w-4 h-4 text-[#8B5E56]" />
-              </div>
-              <p className="font-editorial text-3xl font-normal text-closea-grey">
-                {formatCurrency(finances.grossVolume)}
-              </p>
-              <span className="text-[11px] text-closea-olive flex items-center pt-1 font-medium">
-                <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                Total customer transactions
-              </span>
-            </div>
-
-            {/* Platform Commissions */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-1">
-              <div className="flex items-center justify-between text-[#3D322E]">
-                <span className="text-[11px] uppercase tracking-wider font-semibold">
-                  Platform Commission ({commission.platformFeePercent}%)
-                </span>
-                <Sparkles className="w-4 h-4 text-[#8B5E56]" />
-              </div>
-              <p className="font-editorial text-3xl font-normal text-[#8B5E56]">
-                {formatCurrency(finances.platformRevenue)}
-              </p>
-              <span className="text-[11px] text-[#3D322E] block pt-1">
-                Net Closéa platform earnings
-              </span>
-            </div>
-
-            {/* Active Bookings */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-1">
-              <div className="flex items-center justify-between text-[#3D322E]">
-                <span className="text-[11px] uppercase tracking-wider font-semibold">
-                  Active Rentals & Bookings
-                </span>
-                <ShoppingBag className="w-4 h-4 text-closea-olive" />
-              </div>
-              <p className="font-editorial text-3xl font-normal text-closea-grey">
-                {bookings.active}
-              </p>
-              <span className="text-[11px] text-[#3D322E] block pt-1">
-                {bookings.total} lifetime reservations
-              </span>
-            </div>
-
-            {/* Total Users */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-1">
-              <div className="flex items-center justify-between text-[#3D322E]">
-                <span className="text-[11px] uppercase tracking-wider font-semibold">
-                  Registered Members
-                </span>
-                <Users className="w-4 h-4 text-closea-grey" />
-              </div>
-              <p className="font-editorial text-3xl font-normal text-closea-grey">
-                {users.total}
-              </p>
-              <span className="text-[11px] text-[#3D322E] block pt-1">
-                {users.owners} Owners • {users.customers} Renters
-              </span>
-            </div>
+            {featuredDresses.map((dress) => (
+              <DressCard
+                key={dress.id}
+                id={dress.id}
+                title={dress.title}
+                slug={dress.slug}
+                brand={dress.brand}
+                rentalPricePerDay={dress.rentalPricePerDay}
+                originalPrice={dress.originalPrice}
+                location={dress.location}
+                sizeLabel={dress.size.label}
+                categoryName={dress.category.name}
+                imageUrl={dress.images[0]?.url || 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80'}
+                isFeatured={dress.isFeatured}
+              />
+            ))}
           </div>
+          
+          <div className="mt-10 text-center">
+            <Link href="/marketplace">
+              <Button variant="outline" size="md" className="bg-white border-gray-200">
+                View Entire Catalog
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
-          {/* Secondary Operational Telemetry */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Atelier Operational Status */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Scissors className="w-4 h-4 text-closea-olive" />
-                  <h3 className="font-editorial text-xl font-normal text-closea-grey">
-                    Atelier Logistics
-                  </h3>
-                </div>
-                <Badge variant="olive">{operations.activeAteliers} Active Boutiques</Badge>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="flex justify-between py-2 border-b border-closea-blush">
-                  <span className="text-[#3D322E]">Pending Preparation Tasks:</span>
-                  <strong className="text-[#8B5E56]">{operations.pendingAtelierTasks}</strong>
-                </div>
-                <div className="flex justify-between py-2 border-b border-closea-blush">
-                  <span className="text-[#3D322E]">Total Atelier Share Paid:</span>
-                  <strong className="text-closea-grey">{formatCurrency(finances.atelierPayouts)}</strong>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-[#3D322E]">Configured Fee Split:</span>
-                  <strong className="text-closea-olive">{commission.atelierFeePercent}% of Subtotal</strong>
-                </div>
-              </div>
-
-              <Link href="/admin/ateliers" className="block pt-2">
-                <Button variant="outline" size="sm" className="w-full justify-center">
-                  Manage Ateliers & Tasks
-                </Button>
-              </Link>
-            </div>
-
-            {/* Financial Split Breakdown */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-4 h-4 text-[#8B5E56]" />
-                  <h3 className="font-editorial text-xl font-normal text-closea-grey">
-                    Financial Split Rules
-                  </h3>
-                </div>
-                <Badge variant="sage">Configurable</Badge>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#3D322E]">Dress Owner Share:</span>
-                    <strong>{commission.ownerSharePercent}% ({formatCurrency(finances.ownerPayouts)})</strong>
-                  </div>
-                  <div className="w-full bg-[#FAF7F6] rounded-full h-2 overflow-hidden">
-                    <div className="bg-closea-olive h-2 rounded-full" style={{ width: `${commission.ownerSharePercent}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#3D322E]">Platform Fee:</span>
-                    <strong>{commission.platformFeePercent}% ({formatCurrency(finances.platformRevenue)})</strong>
-                  </div>
-                  <div className="w-full bg-[#FAF7F6] rounded-full h-2 overflow-hidden">
-                    <div className="bg-closea-rose h-2 rounded-full" style={{ width: `${commission.platformFeePercent}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[#3D322E]">Partner Atelier Care:</span>
-                    <strong>{commission.atelierFeePercent}% ({formatCurrency(finances.atelierPayouts)})</strong>
-                  </div>
-                  <div className="w-full bg-[#FAF7F6] rounded-full h-2 overflow-hidden">
-                    <div className="bg-closea-sage h-2 rounded-full" style={{ width: `${commission.atelierFeePercent}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              <Link href="/admin/finances" className="block pt-2">
-                <Button variant="outline" size="sm" className="w-full justify-center">
-                  Modify Commission Splits
-                </Button>
-              </Link>
-            </div>
-
-            {/* Category Distribution */}
-            <div className="p-6 rounded-2xl bg-white border border-[#E8DFDD] shadow-soft space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-editorial text-xl font-normal text-closea-grey">
-                  Category Distribution
+      {/* 5. VALUE PROPOSITION */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            
+            <div className="p-8 sm:p-10 rounded-3xl bg-gray-50 border border-gray-100 flex flex-col justify-between">
+              <div>
+                <ShieldCheck className="w-8 h-8 text-closea-olive mb-5" />
+                <h3 className="text-2xl font-extrabold text-closea-ink mb-3">
+                  Flawless Condition, Guaranteed.
                 </h3>
-                <span className="text-xs text-[#3D322E]">{dresses.total} Total</span>
+                <p className="text-sm font-medium text-closea-inkSoft leading-relaxed mb-6">
+                  Every garment goes through a 12-point inspection, eco-friendly dry cleaning, and professional steaming by our partner ateliers before it reaches you.
+                </p>
               </div>
-
-              <div className="space-y-2 text-xs">
-                {categoryBreakdown.map((cat: any) => (
-                  <div key={cat.name} className="flex items-center justify-between py-1.5 border-b border-closea-blush">
-                    <span className="text-closea-grey">{cat.name}</span>
-                    <span className="font-semibold text-[#8B5E56]">{cat.count}</span>
-                  </div>
+              <ul className="space-y-3">
+                {['Zero stains guarantee', 'Authenticity verified', 'Backup dress protection'].map((item, i) => (
+                  <li key={i} className="flex items-center text-sm font-bold text-closea-ink">
+                    <div className="w-1.5 h-1.5 rounded-full bg-closea-rosewood mr-2.5" />
+                    {item}
+                  </li>
                 ))}
-              </div>
-
-              <Link href="/admin/dresses" className="block pt-2">
-                <Button variant="outline" size="sm" className="w-full justify-center">
-                  View Full Dress Inventory
-                </Button>
-              </Link>
+              </ul>
             </div>
+
+            <div className="p-8 sm:p-10 rounded-3xl bg-closea-ink text-white flex flex-col justify-between">
+              <div>
+                <Sparkles className="w-8 h-8 text-closea-blush mb-5" />
+                <h3 className="text-2xl font-extrabold mb-3">
+                  Turn Your Wardrobe into Income.
+                </h3>
+                <p className="text-sm font-medium text-gray-300 leading-relaxed mb-6">
+                  Your luxury dresses shouldn't sit in the dark. List them on Closéa to earn passive income. We handle the logistics, dry cleaning, and secure payouts.
+                </p>
+              </div>
+              <div>
+                <Link href="/dashboard/owner?action=new-listing">
+                  <Button variant="primary" className="w-full sm:w-auto">
+                    Start Earning Today
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
           </div>
-        </main>
-      </div>
+        </div>
+      </section>
+
     </div>
   );
 }

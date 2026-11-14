@@ -15,17 +15,16 @@ export async function GET(req: NextRequest) {
     const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
     const location = searchParams.get('location')?.trim();
     const featured = searchParams.get('featured') === 'true';
+    const trending = searchParams.get('trending') === 'true'; // فلتر الترند الجديد
     const sort = searchParams.get('sort') || 'newest';
     const ownerId = searchParams.get('ownerId');
 
-    // Build Prisma where clause
     const where: any = {
-      status: 'APPROVED', // Public marketplace shows only approved dresses
+      status: 'APPROVED',
     };
 
     if (ownerId) {
       where.ownerId = ownerId;
-      // If fetching an owner's own inventory, show all statuses
       delete where.status;
     }
 
@@ -38,17 +37,9 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    if (categorySlug && categorySlug !== 'all') {
-      where.category = { slug: categorySlug };
-    }
-
-    if (sizeLabel && sizeLabel !== 'all') {
-      where.size = { label: { contains: sizeLabel } };
-    }
-
-    if (color && color !== 'all') {
-      where.color = { contains: color };
-    }
+    if (categorySlug && categorySlug !== 'all') where.category = { slug: categorySlug };
+    if (sizeLabel && sizeLabel !== 'all') where.size = { label: { contains: sizeLabel } };
+    if (color && color !== 'all') where.color = { contains: color };
 
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.rentalPricePerDay = {};
@@ -56,34 +47,34 @@ export async function GET(req: NextRequest) {
       if (maxPrice !== undefined) where.rentalPricePerDay.lte = maxPrice;
     }
 
-    if (location && location !== 'all') {
-      where.location = { contains: location };
-    }
-
+    if (location && location !== 'all') where.location = { contains: location };
+    
     if (featured) {
       where.isFeatured = true;
     }
 
-    // Sort order
+    // لو الطلب trending بنجيب الأكثر مشاهدة
     let orderBy: any = { createdAt: 'desc' };
-    if (sort === 'price-asc') orderBy = { rentalPricePerDay: 'asc' };
-    if (sort === 'price-desc') orderBy = { rentalPricePerDay: 'desc' };
-    if (sort === 'popular') orderBy = { viewsCount: 'desc' };
+    if (trending) {
+      orderBy = { viewsCount: 'desc' };
+    } else {
+      if (sort === 'price-asc') orderBy = { rentalPricePerDay: 'asc' };
+      if (sort === 'price-desc') orderBy = { rentalPricePerDay: 'desc' };
+      if (sort === 'popular') orderBy = { viewsCount: 'desc' };
+    }
 
     const dresses = await prisma.dress.findMany({
       where,
       orderBy,
+      take: trending ? 12 : undefined, // جلب أفضل 12 فستان للترند
       include: {
         images: { orderBy: { displayOrder: 'asc' } },
         category: true,
         size: true,
-        owner: {
-          select: { id: true, name: true, avatarUrl: true },
-        },
+        owner: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
 
-    // Check wishlist for current user if logged in
     const currentUser = await getCurrentUser();
     let wishlistedDressIds = new Set<string>();
     if (currentUser) {
@@ -130,37 +121,17 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      title,
-      description,
-      brand,
-      categoryId,
-      sizeId,
-      color,
-      condition,
-      originalPrice,
-      rentalPricePerDay,
-      cleaningFee,
-      securityDeposit,
-      location,
-      rentalTerms,
-      images, // array of url strings
+      title, description, brand, categoryId, sizeId, color, condition,
+      originalPrice, rentalPricePerDay, cleaningFee, securityDeposit,
+      location, rentalTerms, images,
     } = body;
 
     if (!title || !description || !brand || !categoryId || !sizeId || !rentalPricePerDay || !location) {
-      return NextResponse.json(
-        { error: 'Please provide all mandatory dress details' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Please provide all mandatory dress details' }, { status: 400 });
     }
 
-    // Generate unique slug
-    const baseSlug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
+    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
-
-    // Admins can create auto-approved listings; Owner listings go into PENDING_APPROVAL
     const initialStatus = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING_APPROVAL';
 
     const dress = await prisma.dress.create({
@@ -191,14 +162,9 @@ export async function POST(req: NextRequest) {
           })),
         },
       },
-      include: {
-        images: true,
-        category: true,
-        size: true,
-      },
+      include: { images: true, category: true, size: true },
     });
 
-    // Notify admins if an owner submitted a listing
     if (initialStatus === 'PENDING_APPROVAL') {
       const admins = await prisma.user.findMany({ where: { role: 'ADMIN' } });
       for (const admin of admins) {

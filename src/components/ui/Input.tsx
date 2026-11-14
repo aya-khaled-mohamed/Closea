@@ -14,29 +14,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-xs font-semibold uppercase tracking-wider text-closea-grey"
-          >
+          <label htmlFor={inputId} className="block text-sm font-bold text-closea-ink">
             {label}
           </label>
         )}
-        <div className="relative">
-          <input
-            id={inputId}
-            ref={ref}
-            className={cn(
-              'w-full px-4 py-2.5 rounded-xl bg-white border border-[#E8DFDD] text-closea-grey text-sm transition-all duration-200 placeholder:text-closea-grey-muted focus:outline-none focus:border-closea-rose focus:ring-2 focus:ring-closea-blush',
-              error && 'border-red-400 focus:border-red-500 focus:ring-red-100',
-              className
-            )}
-            {...props}
-          />
-        </div>
+        <input
+          id={inputId}
+          ref={ref}
+          className={cn(
+            'w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-closea-rosewood transition-all',
+            error && 'ring-2 ring-red-500',
+            className
+          )}
+          {...props}
+        />
         {error ? (
-          <p className="text-xs text-red-600 tracking-wide">{error}</p>
+          <p className="text-xs text-red-600 font-medium">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-[#3D322E]">{helperText}</p>
+          <p className="text-xs text-closea-inkSoft">{helperText}</p>
         ) : null}
       </div>
     );

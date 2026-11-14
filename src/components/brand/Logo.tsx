@@ -15,25 +15,24 @@ export function Logo({
   className = '',
 }: LogoProps) {
   const sizeClasses = {
-    sm: 'text-xl tracking-[0.14em]',
-    md: 'text-2xl md:text-3xl tracking-[0.16em]',
-    lg: 'text-4xl md:text-5xl tracking-[0.18em]',
-    xl: 'text-5xl md:text-6xl tracking-[0.2em]',
+    sm: 'text-xl',
+    md: 'text-2xl md:text-3xl',
+    lg: 'text-4xl md:text-5xl',
+    xl: 'text-5xl md:text-6xl',
   };
 
   const variantClasses = {
-    dark: 'text-closea-grey',
+    dark: 'text-closea-ink', // لون أسود دافي
     light: 'text-white',
-    rose: 'text-[#8B5E56]',
+    rose: 'text-closea-rosewood',
   };
 
   const content = (
     <span
-      className={`font-editorial font-normal inline-block select-none transition-opacity duration-300 hover:opacity-90 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
-      style={{ fontFeatureSettings: '"kern", "liga"' }}
+      className={`font-sans font-extrabold tracking-tight inline-block select-none transition-opacity duration-300 hover:opacity-80 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
     >
-      <span className="capitalize">Clos</span>
-      <span className="italic font-light text-[#8B5E56]">é</span>
+      <span>Clos</span>
+      <span className="text-closea-rosewood">é</span>
       <span>a</span>
     </span>
   );

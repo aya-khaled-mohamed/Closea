@@ -1,110 +1,63 @@
-import jwt from 'jsonwebtoken';
+// src/lib/auth.ts
+import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import prisma from './prisma';
+import jwt from 'jsonwebtoken';
+import prisma from '@/lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'closea_fallback_secret_production_ready';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_dev_only';
 export const SESSION_COOKIE_NAME = 'closea_session';
 export const ADMIN_COOKIE_NAME = 'closea_admin_session';
 
-export interface TokenPayload {
-  userId: string;
-  email: string;
-  role: 'CUSTOMER' | 'OWNER' | 'ATELIER' | 'ADMIN';
-  name: string;
+// دالة توقيع التوكن
+export function signToken(payload: { userId: string; email: string; role: string; name: string }) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function signToken(payload: TokenPayload, expiresIn = '7d'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
-}
-
-export function verifyToken(token: string): TokenPayload | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Retrieves the currently logged-in user from the standard session cookie.
- */
+// دالة جلب المستخدم الحالي (اللي كانت ناقصة)
 export async function getCurrentUser() {
-  const cookieStore = cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!token) return null;
+  try {
+    const cookieStore = cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value || cookieStore.get(ADMIN_COOKIE_NAME)?.value;
 
-  const payload = verifyToken(token);
-  if (!payload) return null;
+    if (!token) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    include: {
-      profile: true,
-      atelier: true,
-    },
-  });
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: {
+        profile: true,
+        atelier: true,
+      },
+    });
 
-  if (!user || user.status === 'SUSPENDED') {
+    if (!user || user.status === 'SUSPENDED') return null;
+
+    return user;
+  } catch (error) {
     return null;
   }
-
-  return user;
 }
 
-/**
- * Retrieves the administrator from the dedicated admin session cookie.
- */
-export async function getCurrentAdmin() {
-  const cookieStore = cookies();
-  const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
-  if (!token) return null;
+// دالة التحقق من صلاحيات الـ API (اللي كانت ناقصة)
+export async function verifyApiAuth(allowedRoles: string[], requireAdmin = false) {
+  try {
+    const user = await getCurrentUser();
 
-  const payload = verifyToken(token);
-  if (!payload || payload.role !== 'ADMIN') return null;
+    if (!user) {
+      return { authorized: false, error: 'Authentication required', status: 401, user: null };
+    }
 
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-  });
+    if (requireAdmin && user.role !== 'ADMIN') {
+      return { authorized: false, error: 'Admin privileges required', status: 403, user: null };
+    }
 
-  if (!user || user.role !== 'ADMIN' || user.status === 'SUSPENDED') {
-    return null;
+    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+      return { authorized: false, error: 'Unauthorized access', status: 403, user: null };
+    }
+
+    return { authorized: true, user };
+  } catch (error) {
+    return { authorized: false, error: 'Server error', status: 500, user: null };
   }
-
-  return user;
-}
-
-/**
- * Helper to check role authorization in API route handlers
- */
-export async function verifyApiAuth(
-  allowedRoles: string[] = ['CUSTOMER', 'OWNER', 'ATELIER', 'ADMIN'],
-  isAdminRoute = false
-) {
-  const cookieStore = cookies();
-  const cookieName = isAdminRoute ? ADMIN_COOKIE_NAME : SESSION_COOKIE_NAME;
-  const token = cookieStore.get(cookieName)?.value;
-
-  if (!token) {
-    return { authorized: false, error: 'Unauthorized: No session token provided', status: 401, user: null };
-  }
-
-  const payload = verifyToken(token);
-  if (!payload) {
-    return { authorized: false, error: 'Unauthorized: Invalid or expired token', status: 401, user: null };
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    include: { atelier: true, profile: true },
-  });
-
-  if (!user || user.status === 'SUSPENDED') {
-    return { authorized: false, error: 'Account suspended or not found', status: 403, user: null };
-  }
-
-  if (!allowedRoles.includes(user.role)) {
-    return { authorized: false, error: 'Forbidden: Insufficient privileges', status: 403, user: null };
-  }
-
-  return { authorized: true, user, status: 200 };
 }

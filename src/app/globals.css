@@ -14,31 +14,26 @@
 
 @layer base {
   body {
-    @apply bg-[#FFFFFF] text-closea-grey antialiased selection:bg-closea-blush selection:text-closea-grey;
+    @apply bg-white text-closea-inkSoft antialiased selection:bg-closea-rose selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  h1, h2, h3, h4, .font-editorial {
-    font-family: var(--font-cormorant), 'Playfair Display', Georgia, serif;
-    letter-spacing: -0.015em;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-extrabold tracking-tight text-closea-ink;
   }
 }
 
-/* Subtle scrollbars for editorial cleanliness */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: #FAF7F6;
 }
-
 ::-webkit-scrollbar-thumb {
   background: #D9B8B4;
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: #C99F9D;
 }
