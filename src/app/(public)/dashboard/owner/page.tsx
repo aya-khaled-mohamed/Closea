@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  PlusCircle, Clock, CheckCircle2, XCircle, TrendingUp, Calendar, AlertCircle, Eye, ChevronDown, Camera
+  PlusCircle, Clock, CheckCircle2, XCircle, TrendingUp, Calendar, AlertCircle, Eye, ChevronDown, Camera, Trash2
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { Button } from '@/components/ui/Button';
@@ -49,7 +49,6 @@ function OwnerDashboardContent() {
   const [isSubmittingListing, setIsSubmittingListing] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
 
-  // Form Fields
   const [title, setTitle] = useState('');
   const [brand, setBrand] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -72,7 +71,6 @@ function OwnerDashboardContent() {
   const [editAvatarBase64, setEditAvatarBase64] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  // التعديل الجديد: مراقبة تغير الرابط عشان يفتح المودال تلقائياً
   useEffect(() => {
     if (searchParams.get('action') === 'new-listing') {
       setIsNewListingOpen(true);
@@ -129,6 +127,22 @@ function OwnerDashboardContent() {
   const handleRejectRequest = async () => {
     if (!rejectModalBookingId) return; setActionLoadingId(rejectModalBookingId);
     try { const res = await fetch(`/api/bookings/${rejectModalBookingId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'REJECT', rejectionReason: rejectionReason || 'Dates unavailable.' }) }); if (res.ok) { setRejectModalBookingId(null); setRejectionReason(''); await loadData(); } } catch (e) { console.error(e); } finally { setActionLoadingId(null); }
+  };
+
+  const handleDeleteDress = async (dressId: string) => {
+    if (!window.confirm('Are you sure you want to delete this dress? This action cannot be undone.')) return;
+    
+    try {
+      const res = await fetch(`/api/dresses/${dressId}`, { method: 'DELETE' });
+      if (res.ok) {
+        await loadData();
+      } else {
+        alert('Failed to delete the dress.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('An error occurred while deleting.');
+    }
   };
 
   const handleCreateListing = async (e: React.FormEvent) => {
@@ -266,7 +280,12 @@ function OwnerDashboardContent() {
                   </div>
                   <div className="p-5 pt-2 border-t border-gray-100 flex items-center justify-between text-sm">
                     <Link href={`/dresses/${dress.slug}`} className="text-closea-rosewood hover:underline inline-flex items-center gap-1 font-bold"><Eye className="w-4 h-4" />View Page</Link>
-                    <span className="text-closea-inkSoft text-xs font-medium">Added {formatDate(dress.createdAt)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-closea-inkSoft text-xs font-medium">Added {formatDate(dress.createdAt)}</span>
+                      <button onClick={() => handleDeleteDress(dress.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-full hover:bg-red-50 transition-colors" title="Delete Listing">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
