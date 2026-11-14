@@ -4,14 +4,12 @@ import Link from 'next/link';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   variant?: 'dark' | 'light' | 'rose';
-  href?: string;
   className?: string;
 }
 
 export function Logo({
   size = 'md',
   variant = 'dark',
-  href = '/',
   className = '',
 }: LogoProps) {
   const sizeClasses = {
@@ -22,7 +20,7 @@ export function Logo({
   };
 
   const variantClasses = {
-    dark: 'text-closea-ink', // لون أسود دافي
+    dark: 'text-closea-ink',
     light: 'text-white',
     rose: 'text-closea-rosewood',
   };
@@ -37,10 +35,9 @@ export function Logo({
     </span>
   );
 
-  if (!href) return content;
-
+  // اللوجو دايماً هياخدك للهوم بيج
   return (
-    <Link href={href} className="inline-flex items-center group focus:outline-none">
+    <Link href="/" className="inline-flex items-center group focus:outline-none">
       {content}
     </Link>
   );

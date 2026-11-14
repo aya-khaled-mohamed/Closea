@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  MapPin, Scissors, CheckCircle2, AlertCircle, ArrowLeft
+  MapPin, CheckCircle2, AlertCircle, ArrowLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -26,9 +26,8 @@ export default function DressDetailPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
+  const [phone, setPhone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [selectedAtelierId, setSelectedAtelierId] = useState('');
-  const [ateliers, setAteliers] = useState<any[]>([]);
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,10 +38,7 @@ export default function DressDetailPage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [dressRes, atelierRes] = await Promise.all([
-          fetch(`/api/dresses/${slug}`),
-          fetch('/api/ateliers'),
-        ]);
+        const dressRes = await fetch(`/api/dresses/${slug}`);
 
         if (!dressRes.ok) {
           setError('Dress not found');
@@ -51,14 +47,6 @@ export default function DressDetailPage() {
 
         const dressData = await dressRes.json();
         setDress(dressData.dress);
-
-        if (atelierRes.ok) {
-          const atelierData = await atelierRes.json();
-          setAteliers(atelierData.ateliers || []);
-          if (atelierData.ateliers?.length > 0) {
-            setSelectedAtelierId(atelierData.ateliers[0].id);
-          }
-        }
       } catch (err) {
         console.error(err);
         setError('Failed to load dress details');
@@ -94,8 +82,9 @@ export default function DressDetailPage() {
   const start = startDate ? new Date(startDate) : null;
   const end = endDate ? new Date(endDate) : null;
   
-  const days = start && end && !isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start
-      ? Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  // تعديل حساب الأيام عشان ميبقاش سالب لما التواريخ تبقى فاضية
+  const days = start && end && !isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start
+      ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
       : 1; 
 
   const financials = calculateBookingFinancials(
@@ -136,8 +125,8 @@ export default function DressDetailPage() {
           startDate,
           endDate,
           specialRequests,
+          phone,
           deliveryAddress,
-          selectedAtelierId,
         }),
       });
 
@@ -215,7 +204,6 @@ export default function DressDetailPage() {
               </div>
             </div>
 
-            {/* Attributes */}
             <div className="grid grid-cols-3 gap-2 text-center text-xs">
               <div className="p-3 rounded-xl bg-white border border-gray-100">
                 <span className="text-closea-inkSoft block text-[10px] font-bold uppercase tracking-wider">Size</span>
@@ -236,7 +224,6 @@ export default function DressDetailPage() {
               <p className="text-sm font-medium text-closea-inkSoft leading-relaxed whitespace-pre-line">{dress.description}</p>
             </div>
 
-            {/* Owner Info */}
             <div className="p-4 rounded-2xl bg-white border border-gray-100 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {dress.owner?.avatarUrl ? (
@@ -252,7 +239,6 @@ export default function DressDetailPage() {
               </div>
             </div>
 
-            {/* BOOKING BOX */}
             <div className="p-6 rounded-3xl bg-gray-50 border border-gray-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                 <h4 className="text-xl font-extrabold text-closea-ink">Reserve Your Dates</h4>
@@ -276,7 +262,6 @@ export default function DressDetailPage() {
                 </div>
               )}
 
-              {/* Breakdown */}
               <div className="space-y-2 pt-2 border-t border-gray-200 text-sm font-medium">
                 <div className="flex justify-between text-closea-inkSoft">
                   <span>{formatCurrency(dress.rentalPricePerDay)} × {days} days</span>
@@ -307,7 +292,6 @@ export default function DressDetailPage() {
           </div>
         </div>
 
-        {/* Related Dresses */}
         {dress.relatedDresses?.length > 0 && (
           <div className="mt-24 pt-12 border-t border-gray-100">
             <div className="text-center mb-8">
@@ -341,38 +325,37 @@ export default function DressDetailPage() {
             {bookingError && (
               <div className="p-3 rounded-xl bg-red-50 text-xs text-red-600 flex items-center gap-2 font-medium"><AlertCircle className="w-4 h-4 flex-shrink-0" /><span>{bookingError}</span></div>
             )}
-            
-            <div className="space-y-1.5">
-              <label className="block text-sm font-bold text-closea-ink">Select Partner Atelier</label>
-              <select value={selectedAtelierId} onChange={(e) => setSelectedAtelierId(e.target.value)} className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium focus:outline-none focus:ring-2 focus:ring-closea-rosewood">
-                {ateliers.map((a) => (<option key={a.id} value={a.id}>{a.name} — {a.address}, {a.city}</option>))}
-              </select>
+
+            {/* حذفنا حقل Select Partner Atelier من هنا */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-bold text-closea-ink">Phone Number <span className="text-red-500">*</span></label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+20 1XX XXX XXXX" className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium focus:outline-none focus:ring-2 focus:ring-closea-rosewood" required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-sm font-bold text-closea-ink">Delivery Address <span className="text-red-500">*</span></label>
+                <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="e.g. 12 Street, Qena" className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium focus:outline-none focus:ring-2 focus:ring-closea-rosewood" required />
+              </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-bold text-closea-ink">Delivery Address (Optional)</label>
-              <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="Leave blank for Atelier pickup" className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium focus:outline-none focus:ring-2 focus:ring-closea-rosewood" />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-bold text-closea-ink">Special Requests</label>
+              <label className="block text-sm font-bold text-closea-ink">Special Requests (Optional)</label>
               <textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} rows={2} placeholder="Heel height, fitting preference..." className="w-full px-4 py-3 rounded-xl border-0 bg-gray-50 text-sm text-closea-ink font-medium focus:outline-none focus:ring-2 focus:ring-closea-rosewood" />
             </div>
 
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 text-sm font-medium space-y-2">
               <div className="flex justify-between text-closea-inkSoft">
                 <span>Selected Dates:</span>
-                <span className="font-bold text-closea-ink">{formatDate(startDate)} – {formatDate(endDate)} ({days} days)</span>
+                <span className="font-bold text-closea-ink">{startDate && endDate ? `${formatDate(startDate)} – ${formatDate(endDate)} (${days} days)` : 'Select dates'}</span>
               </div>
               <div className="flex justify-between text-closea-inkSoft">
                 <span>Rental Subtotal:</span>
                 <span>{formatCurrency(financials.rentalSubtotal)}</span>
               </div>
               <div className="flex justify-between text-closea-inkSoft">
-                <span className="flex items-center gap-1.5">
-                  Security Deposit
-                  <span className="text-[9px] uppercase font-bold text-closea-olive bg-closea-sage/40 px-1.5 py-0.5 rounded">Held at pickup</span>
-                </span>
+                <span className="flex items-center gap-1.5">Security Deposit <span className="text-[9px] uppercase font-bold text-closea-olive bg-closea-sage/40 px-1.5 py-0.5 rounded">Held at pickup</span></span>
                 <span>{formatCurrency(financials.securityDeposit)}</span>
               </div>
               <div className="flex justify-between text-base font-extrabold text-closea-ink pt-2 border-t border-gray-200">

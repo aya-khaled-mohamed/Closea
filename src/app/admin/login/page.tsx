@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Logo from '@/components/brand/Logo';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { ShieldCheck, AlertCircle, Lock } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -38,11 +38,6 @@ export default function AdminLoginPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const autofillAdmin = () => {
-    setEmail('admin@closea.com');
-    setPassword('CloseaAdmin2026!');
   };
 
   return (
@@ -89,20 +84,6 @@ export default function AdminLoginPage() {
             Sign In to Closéa Admin
           </Button>
         </form>
-
-        {/* Demo Fast Login */}
-        <div className="pt-4 border-t border-closea-blush text-center space-y-2">
-          <span className="block text-[11px] uppercase font-semibold tracking-wider text-[#3D322E]">
-            Initialized Admin Credentials
-          </span>
-          <button
-            type="button"
-            onClick={autofillAdmin}
-            className="w-full p-2.5 rounded-xl bg-[#FAF7F6] border border-closea-blush hover:border-closea-rose text-xs text-closea-grey text-center font-medium"
-          >
-            Fill: <strong>admin@closea.com</strong> / <strong>CloseaAdmin2026!</strong>
-          </button>
-        </div>
       </div>
     </div>
   );

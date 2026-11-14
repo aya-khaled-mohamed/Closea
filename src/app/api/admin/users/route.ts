@@ -18,10 +18,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {};
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { email: { contains: search } },
-      ];
+      where.OR = [{ name: { contains: search } }, { email: { contains: search } }];
     }
     if (role && role !== 'all') where.role = role;
     if (status && status !== 'all') where.status = status;
@@ -31,12 +28,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         profile: true,
-        _count: {
-          select: {
-            dresses: true,
-            bookings: true,
-          },
-        },
+        _count: { select: { dresses: true, bookings: true } },
       },
     });
 
@@ -83,9 +75,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Protect primary admin from self-suspension
-    if (targetUser.id === auth.user?.id && status === 'SUSPENDED') {
-      return NextResponse.json({ error: 'Cannot suspend your own administrator account' }, { status: 400 });
+    // Protect primary admin from self-suspension or self-demotion
+    if (targetUser.id === auth.user?.id && (status === 'SUSPENDED' || (role && role !== 'ADMIN'))) {
+      return NextResponse.json({ error: 'Cannot suspend or demote your own administrator account' }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({

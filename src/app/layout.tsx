@@ -6,8 +6,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Closéa — Premium Fashion Rental Marketplace',
-    default: 'Closéa — Editorial Peer-to-Peer Fashion Rental Marketplace',
+    template: '%s | Closéa — Premium Fashion Rental',
+    default: 'Closéa — Premium Fashion Rental Marketplace',
   },
   description:
     'Closéa connects women who own beautiful designer dresses with women who want to rent them for special occasions, supported by certified partner ateliers.',

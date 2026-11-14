@@ -4,7 +4,7 @@ import { AdminSidebar } from '@/components/layout/AdminSidebar';
 export const metadata = {
   title: 'Closéa Admin — Platform Operations & Governance',
 };
-
+ش
 export default function AdminLayout({
   children,
 }: {
