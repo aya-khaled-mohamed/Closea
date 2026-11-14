@@ -33,3 +33,8 @@ prisma/*.db-journal
 *.tsbuildinfo
 next-env.d.ts
 .neon
+
+# Environment variables
+.env
+.env.*
+!.env.example
