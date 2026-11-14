@@ -47,7 +47,7 @@ export function AdminSidebar() {
       <div>
         {/* Admin Brand Header */}
         <div className="p-6 border-b border-closea-blush">
-          <Logo size="md" href="/admin" />
+          <Logo size="md"  />
           <div className="mt-2 flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-closea-olive" />
             <span className="text-[11px] font-bold uppercase tracking-widest text-closea-grey">
