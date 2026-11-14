@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
     const location = searchParams.get('location')?.trim();
     const featured = searchParams.get('featured') === 'true';
-    const trending = searchParams.get('trending') === 'true'; // فلتر الترند الجديد
+    const trending = searchParams.get('trending') === 'true';
     const sort = searchParams.get('sort') || 'newest';
     const ownerId = searchParams.get('ownerId');
 
@@ -53,7 +53,6 @@ export async function GET(req: NextRequest) {
       where.isFeatured = true;
     }
 
-    // لو الطلب trending بنجيب الأكثر مشاهدة
     let orderBy: any = { createdAt: 'desc' };
     if (trending) {
       orderBy = { viewsCount: 'desc' };
@@ -66,7 +65,7 @@ export async function GET(req: NextRequest) {
     const dresses = await prisma.dress.findMany({
       where,
       orderBy,
-      take: trending ? 12 : undefined, // جلب أفضل 12 فستان للترند
+      take: trending ? 12 : undefined,
       include: {
         images: { orderBy: { displayOrder: 'asc' } },
         category: true,
@@ -112,12 +111,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    if (user.role !== 'OWNER' && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Only registered dress owners or administrators can list dresses' },
-        { status: 403 }
-      );
-    }
+    // تم إزالة شرط التحقق من الصلاحيات هنا عشان أي حد يقدر يرفع
 
     const body = await req.json();
     const {
@@ -132,6 +126,8 @@ export async function POST(req: NextRequest) {
 
     const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     const uniqueSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
+    
+    // لو هو أدمن، الفستان بيتقبل على طول. لو أونر أو عميل، بيحتاج موافقة
     const initialStatus = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING_APPROVAL';
 
     const dress = await prisma.dress.create({
