@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
     <div className="w-full min-h-screen flex items-center justify-center bg-[#FAF7F6] p-4">
       <div className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl border border-[#E8DFDD] shadow-card space-y-6">
         <div className="text-center space-y-2">
-          <Logo size="lg" href="/admin" />
+          <Logo size="lg" />
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-closea-blush text-closea-grey text-xs font-semibold uppercase tracking-wider mt-2">
             <Lock className="w-3 h-3 text-[#8B5E56]" />
             <span>Secure Admin Portal</span>
